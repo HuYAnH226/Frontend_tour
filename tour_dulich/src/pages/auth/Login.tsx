@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
 
 interface User {
   maUser: number;
@@ -18,6 +19,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [message, setMessage] = useState("");
   const [userInfo, setUserInfo] = useState<User | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     try {
@@ -27,14 +29,17 @@ export default function Login() {
       );
 
       if ((response.data as any).error) {
-        setMessage("❌ " + (response.data as any).error);
+        // Thay đổi: Dùng alert cho lỗi từ server
+        alert("❌ " + (response.data as any).error);
         return;
       }
 
       setUserInfo(response.data);
-      setMessage("✅ Đăng nhập thành công!");
+      alert("✅ Đăng nhập thành công!"); // Giữ lại message cho thành công
+      navigate("/");
 
       const safeUser = {
+        maUser: response.data.maUser,
         hoTen: response.data.hoTen,
         email: response.data.email,
         soDienThoai: response.data.soDienThoai,
@@ -43,19 +48,21 @@ export default function Login() {
         tenDangNhap: response.data.tenDangNhap,
       };
       localStorage.setItem("userInfo", JSON.stringify(safeUser));
-    } catch (error) {
-      setMessage("❌ Lỗi kết nối server!");
-      console.error(error);
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // Thay đổi: Dùng alert cho lỗi 401
+        alert("❌ Tên đăng nhập hoặc mật khẩu không đúng!");
+      } else {
+        // Thay đổi: Dùng alert cho lỗi kết nối
+        alert("❌ Lỗi kết nối server!");
+      }
+      // Đặt lại message thành rỗng để ẩn thông báo cũ nếu có
+      setMessage("");
     }
   };
 
   return (
     <>
-      <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-      />
-
       <style>{`
         body {
           background: url('https://trithuccongdong.net/wp-content/uploads/2025/08/du-lich-sinh-thai-ruong-bac-thang-cua-dan-toc-mien-nui-phia-bac.jpg');
@@ -226,11 +233,12 @@ export default function Login() {
 
           <p className="text-center mt-4 register-text">
             Don't have an account?{" "}
-            <a href="/register" className="register-link">
+            <Link to="/register" className="register-link">
               Register
-            </a>
+            </Link>
           </p>
 
+          {/* CHỈ HIỂN THỊ MESSAGE CHO TRƯỜNG HỢP THÀNH CÔNG */}
           {message && (
             <div className="alert alert-glass text-center mt-3">{message}</div>
           )}
