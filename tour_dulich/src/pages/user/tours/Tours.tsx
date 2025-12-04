@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  MapPin,
   Clock,
   Users,
   Search,
@@ -11,17 +10,10 @@ import { Header } from "../../../components/layout/Header";
 import { Footer } from "../../../components/layout/Footer";
 import { useNavigate } from "react-router-dom";
 
-interface DiaDiem {
-  maDd: number;
-  tenDd: string;
-  hinhAnh: string;
-}
-
 interface Tour {
   maTour: string;
   tenTour: string;
   diemKhoiHanh: string;
-  diaDiem: DiaDiem;
   moTa: string;
   soNgay: number;
   soChoToiDa: number;
@@ -40,7 +32,6 @@ export default function Tour() {
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
   const [selectedDuration, setSelectedDuration] = useState("all");
-  const [selectedDestination, setSelectedDestination] = useState("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,14 +70,6 @@ export default function Tour() {
     { id: "5+", name: "5+ ngày" },
   ];
 
-  // Get unique destinations
-  const destinations = [
-    { id: "all", name: "Tất cả điểm đến" },
-    ...Array.from(new Set(tours.map((tour) => tour.diaDiem.tenDd))).map(
-      (dest) => ({ id: dest, name: dest })
-    ),
-  ];
-
   // Filter tours based on all criteria
   const filteredTours = tours.filter((tour) => {
     // Category filter
@@ -102,17 +85,9 @@ export default function Tour() {
       const keyword = searchKeyword.toLowerCase();
       const matchName = tour.tenTour.toLowerCase().includes(keyword);
       const matchDescription = tour.moTa.toLowerCase().includes(keyword);
-      const matchDestination = tour.diaDiem.tenDd
-        .toLowerCase()
-        .includes(keyword);
       const matchDeparture = tour.diemKhoiHanh.toLowerCase().includes(keyword);
 
-      if (
-        !matchName &&
-        !matchDescription &&
-        !matchDestination &&
-        !matchDeparture
-      ) {
+      if (!matchName && !matchDescription && !matchDeparture) {
         return false;
       }
     }
@@ -131,14 +106,6 @@ export default function Tour() {
       if (selectedDuration === "5+" && tour.soNgay < 5) return false;
     }
 
-    // Destination filter
-    if (
-      selectedDestination !== "all" &&
-      tour.diaDiem.tenDd !== selectedDestination
-    ) {
-      return false;
-    }
-
     return true;
   });
 
@@ -148,7 +115,6 @@ export default function Tour() {
     setSelectedCategory("all");
     setPriceRange({ min: 0, max: 10000000 });
     setSelectedDuration("all");
-    setSelectedDestination("all");
   };
 
   if (loading) {
@@ -224,24 +190,6 @@ export default function Tour() {
               {/* Advanced Filters */}
               {showFilters && (
                 <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
-                  {/* Destination Filter */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Điểm đến
-                    </label>
-                    <select
-                      value={selectedDestination}
-                      onChange={(e) => setSelectedDestination(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-                    >
-                      {destinations.map((dest) => (
-                        <option key={dest.id} value={dest.id}>
-                          {dest.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   {/* Duration Filter */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -364,15 +312,11 @@ export default function Tour() {
               >
                 {/* Image */}
                 <div className="relative h-48 bg-gradient-to-br from-blue-400 to-indigo-500">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <img
-                      src={tour.diaDiem.hinhAnh}
-                      alt={tour.diaDiem.tenDd}
-                      className="h-48 w-full object-cover"
-                    />
+                  <div className="absolute inset-0 flex items-center justify-center text-white text-6xl font-bold">
+                    {tour.tenTour.charAt(0)}
                   </div>
                   <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
-                    {tour.diaDiem.tenDd}
+                    {tour.diemKhoiHanh}
                   </div>
                 </div>
 

@@ -11,9 +11,76 @@ export default function TourDetail() {
   // State để quản lý Modal và Booking Data
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookingData, setBookingData] = useState({
-    soKhach: 1, // Mặc định là 1 khách
-    diemDi: "", // Để trống cho người dùng nhập
+    soKhach:"1", 
+    diemDi: "", 
   });
+  // Danh sách tỉnh thành Việt Nam
+  const tinhThanhVietNam = [
+    "Hà Nội",
+    "TP. Hồ Chí Minh",
+    "Đà Nẵng",
+    "Hải Phòng",
+    "Cần Thơ",
+    "An Giang",
+    "Bà Rịa - Vũng Tàu",
+    "Bắc Giang",
+    "Bắc Kạn",
+    "Bạc Liêu",
+    "Bắc Ninh",
+    "Bến Tre",
+    "Bình Định",
+    "Bình Dương",
+    "Bình Phước",
+    "Bình Thuận",
+    "Cà Mau",
+    "Cao Bằng",
+    "Đắk Lắk",
+    "Đắk Nông",
+    "Điện Biên",
+    "Đồng Nai",
+    "Đồng Tháp",
+    "Gia Lai",
+    "Hà Giang",
+    "Hà Nam",
+    "Hà Tĩnh",
+    "Hải Dương",
+    "Hậu Giang",
+    "Hòa Bình",
+    "Hưng Yên",
+    "Khánh Hòa",
+    "Kiên Giang",
+    "Kon Tum",
+    "Lai Châu",
+    "Lâm Đồng",
+    "Lạng Sơn",
+    "Lào Cai",
+    "Long An",
+    "Nam Định",
+    "Nghệ An",
+    "Ninh Bình",
+    "Ninh Thuận",
+    "Phú Thọ",
+    "Phú Yên",
+    "Quảng Bình",
+    "Quảng Nam",
+    "Quảng Ngãi",
+    "Quảng Ninh",
+    "Quảng Trị",
+    "Sóc Trăng",
+    "Sơn La",
+    "Tây Ninh",
+    "Thái Bình",
+    "Thái Nguyên",
+    "Thanh Hóa",
+    "Thừa Thiên Huế",
+    "Tiền Giang",
+    "Trà Vinh",
+    "Tuyên Quang",
+    "Vĩnh Long",
+    "Vĩnh Phúc",
+    "Yên Bái",
+  ];
+  
 
   // Lấy thông tin người dùng từ Local Storage
   const store = localStorage.getItem("userInfo");
@@ -697,25 +764,30 @@ export default function TourDetail() {
                 />
               </div>
 
-              {/* Input Điểm Đi */}
+              {/* Dropdown Chọn Điểm Đi */}
               <div>
                 <label
                   htmlFor="diemDi"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Điểm đi (Nơi bạn muốn bắt đầu chuyến đi)
+                  Điểm đi (Chọn tỉnh/thành phố)
                 </label>
-                <input
-                  type="text"
+                <select
                   id="diemDi"
                   value={bookingData.diemDi}
                   onChange={(e) =>
                     setBookingData({ ...bookingData, diemDi: e.target.value })
                   }
-                  placeholder="Ví dụ: Hà Nội"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
                   required
-                />
+                >
+                  <option value="">-- Chọn tỉnh/thành phố --</option>
+                  {tinhThanhVietNam.map((tinh, index) => (
+                    <option key={index} value={tinh}>
+                      {tinh}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Thông tin hiển thị Tổng tiền */}

@@ -22,6 +22,27 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
+    // ====== TÀI KHOẢN ADMIN MẶC ĐỊNH ======
+  if (tenDangNhap === "admin" && matKhau === "123") {
+    const adminUser = {
+      maUser: 0,
+      tenDangNhap: "admin",
+      hoTen: "Quản trị viên",
+      email: "admin@example.com",
+      soDienThoai: "0000000000",
+      soCmnd: "000000000",
+      diaChi: "Hệ thống",
+    };
+
+    localStorage.setItem("userInfo", JSON.stringify(adminUser));
+
+    alert("✅ Đăng nhập ADMIN thành công!");
+    navigate("/admin");
+
+    return; // Ngăn gọi API backend
+  }
+
+  // ====== NẾU KHÔNG PHẢI ADMIN, GỌI API NHƯ BÌNH THƯỜNG ======
     try {
       const response = await axios.post<User>(
         "http://localhost:8080/api/user/login",
