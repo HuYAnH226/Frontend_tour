@@ -158,8 +158,7 @@ export default function AdminLayout() {
   const handleLogout = () => {
     if (window.confirm("Bạn có chắc muốn đăng xuất?")) {
       alert("Đã đăng xuất thành công!");
-      // Thêm logic đăng xuất thực tế ở đây
-      // window.location.href = "/login";
+      window.location.href = "/login";
     }
   };
 

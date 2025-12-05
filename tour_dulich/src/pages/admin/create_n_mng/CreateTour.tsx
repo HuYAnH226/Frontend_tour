@@ -10,9 +10,10 @@ type TourForm = {
   soChoToiDa: string;
   giaTour: string;
   soLuong: string;
+  anhTour: string;
 };
 
-export default function CreateTourSimple() {
+export default function CreateTourWithImage() {
   const [form, setForm] = useState<TourForm>({
     maTour: "",
     tenTour: "",
@@ -22,11 +23,14 @@ export default function CreateTourSimple() {
     soChoToiDa: "",
     giaTour: "",
     soLuong: "",
+    anhTour: "",
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [result, setResult] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string>("");
 
   const tinhThanhVietNam = [
     "Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
@@ -59,6 +63,65 @@ export default function CreateTourSimple() {
       });
     }
   };
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // Kiểm tra loại file
+  if (!file.type.startsWith('image/')) {
+    alert('❌ Vui lòng chọn file ảnh!');
+    return;
+  }
+
+  // Kiểm tra kích thước (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('❌ Ảnh không được vượt quá 5MB!');
+    return;
+  }
+
+  setIsUploading(true);
+
+  try {
+    // Preview ảnh
+    const reader = new FileReader();
+    reader.onloadend = () => setPreviewImage(reader.result as string);
+    reader.readAsDataURL(file);
+
+    // Upload lên server
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('http://localhost:8080/api/tour/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (res.ok) {
+      // Backend trả về /uploads/tours/xxx.jpg
+      const relativeUrl = await res.text();
+      console.log("Relative:", relativeUrl);
+
+      // FE cần URL đầy đủ
+      const fullUrl = "http://localhost:8080" + relativeUrl;
+      console.log("Full URL:", fullUrl);
+
+      setForm(prev => ({ ...prev, anhTour: fullUrl }));
+
+      alert('✅ Upload ảnh thành công!');
+    } else {
+      alert('❌ Lỗi upload ảnh');
+      setPreviewImage('');
+    }
+  } catch (error) {
+    console.error('Lỗi upload:', error);
+    alert('❌ Lỗi kết nối khi upload ảnh');
+    setPreviewImage('');
+  } finally {
+    setIsUploading(false);
+  }
+};
+
 
   const validateForm = (): boolean => {
     const newErrors: {[key: string]: string} = {};
@@ -128,6 +191,7 @@ export default function CreateTourSimple() {
       giaTour: parseFloat(form.giaTour),
       soLuong: parseInt(form.soLuong),
       trangThai: true,
+      anhTour: form.anhTour || "",
       lichTrinh: [],
       lichKhoiHanh: []
     };
@@ -166,7 +230,9 @@ export default function CreateTourSimple() {
           soChoToiDa: "",
           giaTour: "",
           soLuong: "",
+          anhTour: "",
         });
+        setPreviewImage("");
       } else {
         alert(`❌ Lỗi ${res.status}: ${JSON.stringify(data)}`);
       }
@@ -212,6 +278,51 @@ export default function CreateTourSimple() {
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             
+            {/* Upload ảnh */}
+            <div>
+              <label style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: "600",
+                color: "#555"
+              }}>
+                Ảnh tour 📸
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "14px",
+                  cursor: isUploading ? "not-allowed" : "pointer"
+                }}
+              />
+              {isUploading && (
+                <span style={{ color: "#007bff", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                  ⏳ Đang upload...
+                </span>
+              )}
+              {previewImage && (
+                <div style={{ marginTop: "10px" }}>
+                  <img 
+                    src={previewImage} 
+                    alt="Preview" 
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "300px",
+                      borderRadius: "8px",
+                      border: "2px solid #ddd"
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
             {/* Tên tour */}
             <div>
               <label style={{
@@ -476,37 +587,6 @@ export default function CreateTourSimple() {
             </button>
           </div>
         </div>
-
-        {/* Kết quả */}
-        {result && (
-          <div style={{
-            marginTop: "20px",
-            backgroundColor: "white",
-            borderRadius: "8px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            padding: "20px"
-          }}>
-            <h3 style={{
-              margin: "0 0 15px 0",
-              color: "#333",
-              fontSize: "18px",
-              fontWeight: "600"
-            }}>
-              Kết quả:
-            </h3>
-            <pre style={{
-              backgroundColor: "#f8f9fa",
-              padding: "15px",
-              borderRadius: "4px",
-              overflow: "auto",
-              fontSize: "13px",
-              color: "#495057",
-              margin: 0
-            }}>
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );

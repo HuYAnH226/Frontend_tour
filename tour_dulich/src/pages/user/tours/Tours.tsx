@@ -20,6 +20,8 @@ interface Tour {
   giaTour: number;
   trangThai: boolean;
   lichKhoiHanh: any[];
+  anhTour: string;
+
 }
 
 export default function Tour() {
@@ -38,17 +40,31 @@ export default function Tour() {
     fetchTours();
   }, []);
 
-  const fetchTours = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/api/tour/all");
-      const data = await response.json();
-      setTours(data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching tours:", error);
-      setLoading(false);
-    }
-  };
+const fetchTours = async () => {
+  try {
+    const response = await fetch("http://localhost:8080/api/tour/all");
+    const data = await response.json();
+
+    // Lọc chỉ lấy tour có trangThai = true (public)
+    const visible = data.filter((t: any) => t.trangThai === true);
+
+    // chuẩn hóa ảnh
+    const normalized: Tour[] = visible.map((t: any) => {
+      let img = t.anhTour || "";
+      if (img && !img.startsWith("http")) {
+        img = "http://localhost:8080" + img;
+      }
+      return { ...t, anhTour: img };
+    });
+
+    setTours(normalized);
+    setLoading(false);
+  } catch (error) {
+    console.error("Error fetching tours:", error);
+    setLoading(false);
+  }
+};
+
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -311,14 +327,35 @@ export default function Tour() {
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-2 duration-300"
               >
                 {/* Image */}
-                <div className="relative h-48 bg-gradient-to-br from-blue-400 to-indigo-500">
-                  <div className="absolute inset-0 flex items-center justify-center text-white text-6xl font-bold">
-                    {tour.tenTour.charAt(0)}
-                  </div>
-                  <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
-                    {tour.diemKhoiHanh}
-                  </div>
-                </div>
+                <div className="relative h-48">
+  {tour.anhTour ? (
+    <img
+      src={tour.anhTour}
+      alt={tour.tenTour}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      onError={(e) => {
+        // nếu ảnh lỗi, đổi về fallback gradient
+        const el = e.currentTarget as HTMLImageElement;
+        el.style.display = "none";
+        const parent = el.parentElement;
+        if (parent) {
+          parent.querySelector(".fallback")?.classList.remove("hidden");
+        }
+      }}
+    />
+  ) : null}
+
+  {/* Fallback khi ko có ảnh hoặc image error */}
+  <div className={`fallback ${tour.anhTour ? "hidden" : ""} w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-6xl font-bold`}>
+    {tour.tenTour ? tour.tenTour.charAt(0) : "T"}
+  </div>
+
+  <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
+    {tour.diemKhoiHanh}
+  </div>
+</div>
+
 
                 {/* Content */}
                 <div className="p-6">

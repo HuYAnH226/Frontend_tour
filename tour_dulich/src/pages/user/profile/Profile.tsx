@@ -7,10 +7,14 @@ import {
   MapPin,
   UserCircle,
   LogOut,
+  Calendar,
+  Map,
+  Users,
 } from "lucide-react";
 
 export default function Profile() {
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [hoaDonList, setHoaDonList] = useState<any[]>([]);
 
   useEffect(() => {
     const store = localStorage.getItem("userInfo");
@@ -18,7 +22,14 @@ export default function Profile() {
       window.location.href = "/login";
       return;
     }
-    setUserInfo(JSON.parse(store));
+
+    const user = JSON.parse(store);
+    setUserInfo(user);
+
+    fetch(`http://localhost:8080/api/hoadon/user/${user.maUser}`)
+      .then((res) => res.json())
+      .then((data) => setHoaDonList(data))
+      .catch((err) => console.error("Lỗi khi lấy hóa đơn:", err));
   }, []);
 
   const handleLogout = () => {
@@ -33,7 +44,7 @@ export default function Profile() {
       <div className="max-w-4xl mx-auto">
         {/* Card chính */}
         <div className="bg-white shadow-2xl rounded-3xl overflow-hidden">
-          {/* Header với gradient */}
+          {/* Header */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white relative">
             <div className="absolute top-4 right-4">
               <button
@@ -49,8 +60,8 @@ export default function Profile() {
               <div className="w-24 h-24 mx-auto bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-4">
                 <UserCircle className="w-16 h-16" />
               </div>
-              <h1 className="text-3xl font-bold mb-2">{userInfo?.hoTen}</h1>
-              <p className="text-indigo-100">@{userInfo?.tenDangNhap}</p>
+              <h1 className="text-3xl font-bold mb-2">{userInfo.hoTen}</h1>
+              <p className="text-indigo-100">@{userInfo.tenDangNhap}</p>
             </div>
           </div>
 
@@ -63,74 +74,105 @@ export default function Profile() {
 
             <div className="grid md:grid-cols-2 gap-4">
               {/* Email */}
-              <div className="group p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl border border-blue-200 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Mail className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-600 mb-1">
-                      Email
-                    </p>
-                    <p className="text-gray-900 font-medium break-words">
-                      {userInfo?.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <InfoCard
+                icon={<Mail className="w-6 h-6 text-white" />}
+                title="Email"
+                value={userInfo.email}
+                color="blue"
+              />
 
-              {/* Số điện thoại */}
-              <div className="group p-5 bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl border border-green-200 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Phone className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-600 mb-1">
-                      Số điện thoại
-                    </p>
-                    <p className="text-gray-900 font-medium">
-                      {userInfo?.soDienThoai}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* Phone */}
+              <InfoCard
+                icon={<Phone className="w-6 h-6 text-white" />}
+                title="Số điện thoại"
+                value={userInfo.soDienThoai}
+                color="green"
+              />
 
-              {/* CMND/CCCD */}
-              <div className="group p-5 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl border border-purple-200 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <CreditCard className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-600 mb-1">
-                      CMND / CCCD
-                    </p>
-                    <p className="text-gray-900 font-medium">
-                      {userInfo?.soCmnd}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* CMND */}
+              <InfoCard
+                icon={<CreditCard className="w-6 h-6 text-white" />}
+                title="CMND / CCCD"
+                value={userInfo.soCmnd}
+                color="purple"
+              />
 
               {/* Địa chỉ */}
-              <div className="group p-5 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl border border-orange-200 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-600 mb-1">
-                      Địa chỉ
-                    </p>
-                    <p className="text-gray-900 font-medium break-words">
-                      {userInfo?.diaChi}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <InfoCard
+                icon={<MapPin className="w-6 h-6 text-white" />}
+                title="Địa chỉ"
+                value={userInfo.diaChi}
+                color="orange"
+              />
             </div>
+
+            {/* TOUR ĐÃ ĐẶT */}
+            <h2 className="text-xl font-bold text-gray-800 mt-10 mb-6 flex items-center gap-2">
+              <div className="w-1 h-6 bg-indigo-600 rounded-full"></div>
+              Tour đã đặt
+            </h2>
+
+            {hoaDonList.length === 0 ? (
+              <p className="text-gray-500 italic">Bạn chưa đặt tour nào.</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {hoaDonList.map((hd) => (
+                  <div
+                    key={hd.maHd}
+                    className="group p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-2xl border border-indigo-200 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Calendar className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-600 mb-1">
+                          {hd.tour?.tenTour}
+                        </p>
+
+                        <p className="text-gray-900 font-medium">
+                          <Map className="w-4 h-4 inline mr-1" />
+                          Điểm đi: {hd.diemDi}
+                        </p>
+
+                        <p className="text-gray-900 font-medium mt-1">
+                          <Users className="w-4 h-4 inline mr-1" />
+                          Số khách: {hd.soKhach}
+                        </p>
+
+                        <p className="text-gray-900 font-medium mt-1">
+                          <Calendar className="w-4 h-4 inline mr-1" />
+                          Ngày đặt: {hd.ngayLapHD}
+                        </p>
+
+                      
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ icon, title, value, color }: any) {
+  return (
+    <div
+      className={`group p-5 bg-${color}-50 bg-gradient-to-br from-${color}-50 to-${color}-100/50 rounded-2xl border border-${color}-200 hover:shadow-lg transition-all duration-300`}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className={`w-12 h-12 bg-${color}-500 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}
+        >
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-600 mb-1">{title}</p>
+          <p className="text-gray-900 font-medium break-words">{value}</p>
         </div>
       </div>
     </div>
