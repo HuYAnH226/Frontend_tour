@@ -232,12 +232,12 @@ const AdminTourManagement: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('❌ Vui lòng chọn file ảnh!');
+      alert(' Vui lòng chọn file ảnh!');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('❌ Ảnh không được vượt quá 5MB!');
+      alert(' Ảnh không được vượt quá 5MB!');
       return;
     }
 
@@ -260,14 +260,14 @@ const AdminTourManagement: React.FC = () => {
         const relativeUrl = await res.text();
         const fullUrl = "http://localhost:8080" + relativeUrl;
         setEditForm(prev => ({ ...prev, anhTour: fullUrl }));
-        alert('✅ Upload ảnh thành công!');
+        alert(' Upload ảnh thành công!');
       } else {
-        alert('❌ Lỗi upload ảnh');
+        alert(' Lỗi upload ảnh');
         setPreviewImage('');
       }
     } catch (error) {
       console.error('Lỗi upload:', error);
-      alert('❌ Lỗi kết nối khi upload ảnh');
+      alert(' Lỗi kết nối khi upload ảnh');
       setPreviewImage('');
     } finally {
       setIsUploading(false);
@@ -311,7 +311,7 @@ const AdminTourManagement: React.FC = () => {
 
     if (Object.keys(newErrors).length > 0) {
       const errorMessages = Object.values(newErrors).join('\n');
-      alert("❌ Vui lòng sửa các lỗi sau:\n" + errorMessages);
+      alert(" Vui lòng sửa các lỗi sau:\n" + errorMessages);
       return false;
     }
 
@@ -343,12 +343,12 @@ const AdminTourManagement: React.FC = () => {
 
     try {
       await updateTour(editForm.maTour, payload);
-      alert("✅ Cập nhật tour thành công!");
+      alert(" Cập nhật tour thành công!");
       setShowEditModal(false);
       await loadTours();
     } catch (e) {
       console.error("Lỗi:", e);
-      alert("❌ Lỗi kết nối đến server");
+      alert(" Lỗi kết nối đến server");
     } finally {
       setIsSubmitting(false);
     }
@@ -568,7 +568,7 @@ const AdminTourManagement: React.FC = () => {
                     e.currentTarget.style.backgroundColor = "#ffc107";
                   }}
                 >
-                  ✏️ Sửa
+                   Sửa
                 </button>
                 <button
                   onClick={(e) => {
@@ -594,7 +594,7 @@ const AdminTourManagement: React.FC = () => {
                   }}
                   title={tour.trangThai ? 'Ẩn tour' : 'Hiện tour'}
                 >
-                  {tour.trangThai ? '👁️ Ẩn' : '✓ Hiện'}
+                  {tour.trangThai ? ' Ẩn' : ' Hiện'}
                 </button>
               </div>
             </div>
@@ -675,7 +675,7 @@ const AdminTourManagement: React.FC = () => {
                       fontWeight: "600",
                       color: "#555"
                     }}>
-                      Ảnh tour 📸
+                      Ảnh tour 
                     </label>
                     <input
                       type="file"
@@ -993,7 +993,7 @@ const AdminTourManagement: React.FC = () => {
                     if (!isSubmitting) e.currentTarget.style.background = "#ffc107";
                   }}
                 >
-                  {isSubmitting ? "Đang lưu..." : "💾 Lưu thay đổi"}
+                  {isSubmitting ? "Đang lưu..." : " Lưu thay đổi"}
                 </button>
               </div>
             </div>

@@ -695,7 +695,7 @@ export default function TourDetail() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 m-4">
             <div className="flex justify-between items-center border-b pb-4 mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                🚀 Xác Nhận Đặt Tour
+                 Xác Nhận Đặt Tour
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -813,7 +813,7 @@ export default function TourDetail() {
                   : "bg-green-600 hover:bg-green-700 text-white"
               }`}
             >
-              💸 Thanh Toán và Xác Nhận Đặt Tour
+               Thanh Toán và Xác Nhận Đặt Tour
             </button>
           </div>
         </div>

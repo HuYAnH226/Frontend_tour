@@ -70,13 +70,13 @@ export default function CreateTourWithImage() {
 
   // Kiểm tra loại file
   if (!file.type.startsWith('image/')) {
-    alert('❌ Vui lòng chọn file ảnh!');
+    alert(' Vui lòng chọn file ảnh!');
     return;
   }
 
   // Kiểm tra kích thước (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    alert('❌ Ảnh không được vượt quá 5MB!');
+    alert(' Ảnh không được vượt quá 5MB!');
     return;
   }
 
@@ -108,14 +108,14 @@ export default function CreateTourWithImage() {
 
       setForm(prev => ({ ...prev, anhTour: fullUrl }));
 
-      alert('✅ Upload ảnh thành công!');
+      alert(' Upload ảnh thành công!');
     } else {
-      alert('❌ Lỗi upload ảnh');
+      alert(' Lỗi upload ảnh');
       setPreviewImage('');
     }
   } catch (error) {
     console.error('Lỗi upload:', error);
-    alert('❌ Lỗi kết nối khi upload ảnh');
+    alert(' Lỗi kết nối khi upload ảnh');
     setPreviewImage('');
   } finally {
     setIsUploading(false);
@@ -166,7 +166,7 @@ export default function CreateTourWithImage() {
 
     if (Object.keys(newErrors).length > 0) {
       const errorMessages = Object.values(newErrors).join('\n');
-      alert("❌ Vui lòng sửa các lỗi sau:\n" + errorMessages);
+      alert(" Vui lòng sửa các lỗi sau:\n" + errorMessages);
       return false;
     }
 
@@ -220,7 +220,7 @@ export default function CreateTourWithImage() {
       setResult(data);
       
       if (res.ok) {
-        alert("✅ Tạo tour thành công!");
+        alert(" Tạo tour thành công!");
         setForm({
           maTour: "",
           tenTour: "",
@@ -234,13 +234,13 @@ export default function CreateTourWithImage() {
         });
         setPreviewImage("");
       } else {
-        alert(`❌ Lỗi ${res.status}: ${JSON.stringify(data)}`);
+        alert(` Lỗi ${res.status}: ${JSON.stringify(data)}`);
       }
 
     } catch (e) {
       console.error("Lỗi:", e);
       setResult({ error: "Lỗi kết nối" });
-      alert("❌ Lỗi kết nối đến server");
+      alert(" Lỗi kết nối đến server");
     } finally {
       setIsSubmitting(false);
     }
@@ -286,7 +286,7 @@ export default function CreateTourWithImage() {
                 fontWeight: "600",
                 color: "#555"
               }}>
-                Ảnh tour 📸
+                Ảnh tour 
               </label>
               <input
                 type="file"
@@ -583,7 +583,7 @@ export default function CreateTourWithImage() {
                 if (!isSubmitting) e.currentTarget.style.background = "#007bff";
               }}
             >
-              {isSubmitting ? "Đang tạo..." : "🚀 Tạo Tour"}
+              {isSubmitting ? "Đang tạo..." : " Tạo Tour"}
             </button>
           </div>
         </div>
