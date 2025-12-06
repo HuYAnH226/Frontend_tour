@@ -13,6 +13,8 @@ interface Tour {
   tongChoConLai: number;
   soLuong: number;
   tinhTrang: string;
+  anhTour?: string;
+  moTa?: string;
 }
 
 interface LichTrinhDto {
@@ -42,9 +44,22 @@ interface TourDetail {
   ngayTao: string;
   lichTrinh: LichTrinhDto[];
   lichKhoiHanh: LichKhoiHanhDto[];
+  anhTour?: string;
 }
 
 type FilterType = 'all' | 'available' | 'full' | 'hidden';
+
+type TourForm = {
+  maTour: string;
+  tenTour: string;
+  diemKhoiHanh: string;
+  moTa: string;
+  soNgay: string;
+  soChoToiDa: string;
+  giaTour: string;
+  soLuong: string;
+  anhTour: string;
+};
 
 const fetchAllTours = async (): Promise<Tour[]> => {
   const url = `/api/thong-ke/all-tours`;
@@ -76,12 +91,57 @@ const toggleTourStatus = async (maTour: string): Promise<any> => {
   return await res.json();
 };
 
+const updateTour = async (maTour: string, payload: any): Promise<any> => {
+  const url = `http://localhost:8080/api/tour/update-full/${maTour}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`Server returned ${res.status}`);
+  return await res.json();
+};
+
 const AdminTourManagement: React.FC = () => {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedTour, setSelectedTour] = useState<TourDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [filter, setFilter] = useState<FilterType>('all');
+  
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState<TourForm>({
+    maTour: "",
+    tenTour: "",
+    diemKhoiHanh: "",
+    moTa: "",
+    soNgay: "",
+    soChoToiDa: "",
+    giaTour: "",
+    soLuong: "",
+    anhTour: "",
+  });
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string>("");
+
+  const tinhThanhVietNam = [
+    "Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
+    "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu",
+    "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước",
+    "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông",
+    "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang",
+    "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình",
+    "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+    "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định",
+    "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên",
+    "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị",
+    "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên",
+    "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang",
+    "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+  ];
 
   useEffect(() => {
     loadTours();
@@ -125,6 +185,172 @@ const AdminTourManagement: React.FC = () => {
     } catch (error) {
       console.error('Error toggling tour status:', error);
       alert('Không thể cập nhật trạng thái tour');
+    }
+  };
+
+  const handleEditClick = async (maTour: string, e: React.MouseEvent): Promise<void> => {
+    e.stopPropagation();
+    try {
+      const detail = await fetchTourDetail(maTour);
+      setEditForm({
+        maTour: detail.maTour,
+        tenTour: detail.tenTour,
+        diemKhoiHanh: detail.diemKhoiHanh,
+        moTa: detail.moTa,
+        soNgay: detail.soNgay.toString(),
+        soChoToiDa: detail.soChoToiDa.toString(),
+        giaTour: detail.giaTour.toString(),
+        soLuong: "0", // Bạn cần thêm field này vào API nếu cần
+        anhTour: detail.anhTour || "",
+      });
+      setPreviewImage(detail.anhTour ? `http://localhost:8080${detail.anhTour}` : "");
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error loading tour for edit:', error);
+      alert('Không thể tải thông tin tour');
+    }
+  };
+
+  const updateEditForm = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('❌ Vui lòng chọn file ảnh!');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('❌ Ảnh không được vượt quá 5MB!');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewImage(reader.result as string);
+      reader.readAsDataURL(file);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('http://localhost:8080/api/tour/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const relativeUrl = await res.text();
+        const fullUrl = "http://localhost:8080" + relativeUrl;
+        setEditForm(prev => ({ ...prev, anhTour: fullUrl }));
+        alert('✅ Upload ảnh thành công!');
+      } else {
+        alert('❌ Lỗi upload ảnh');
+        setPreviewImage('');
+      }
+    } catch (error) {
+      console.error('Lỗi upload:', error);
+      alert('❌ Lỗi kết nối khi upload ảnh');
+      setPreviewImage('');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: {[key: string]: string} = {};
+
+    if (!editForm.tenTour.trim()) {
+      newErrors.tenTour = "Tên tour không được để trống";
+    }
+
+    if (!editForm.diemKhoiHanh) {
+      newErrors.diemKhoiHanh = "Điểm đến không được để trống";
+    }
+
+    if (!editForm.soNgay.trim()) {
+      newErrors.soNgay = "Số ngày không được để trống";
+    } else if (parseInt(editForm.soNgay) <= 0) {
+      newErrors.soNgay = "Số ngày phải lớn hơn 0";
+    }
+
+    if (!editForm.soChoToiDa.trim()) {
+      newErrors.soChoToiDa = "Số chỗ tối đa không được để trống";
+    } else if (parseInt(editForm.soChoToiDa) <= 0) {
+      newErrors.soChoToiDa = "Số chỗ tối đa phải lớn hơn 0";
+    }
+
+    if (!editForm.giaTour.trim()) {
+      newErrors.giaTour = "Giá tour không được để trống";
+    } else if (parseFloat(editForm.giaTour) <= 0) {
+      newErrors.giaTour = "Giá tour phải lớn hơn 0";
+    }
+
+    if (!editForm.moTa.trim()) {
+      newErrors.moTa = "Mô tả không được để trống";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const errorMessages = Object.values(newErrors).join('\n');
+      alert("❌ Vui lòng sửa các lỗi sau:\n" + errorMessages);
+      return false;
+    }
+
+    return true;
+  };
+
+  const submitEdit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const payload = {
+      maTour: editForm.maTour,
+      tenTour: editForm.tenTour,
+      diemKhoiHanh: editForm.diemKhoiHanh,
+      diaDiemId: null,
+      moTa: editForm.moTa,
+      soNgay: parseInt(editForm.soNgay),
+      soChoToiDa: parseInt(editForm.soChoToiDa),
+      giaTour: parseFloat(editForm.giaTour),
+      soLuong: parseInt(editForm.soLuong) || 0,
+      trangThai: true,
+      anhTour: editForm.anhTour || "",
+      lichTrinh: [],
+      lichKhoiHanh: []
+    };
+
+    try {
+      await updateTour(editForm.maTour, payload);
+      alert("✅ Cập nhật tour thành công!");
+      setShowEditModal(false);
+      await loadTours();
+    } catch (e) {
+      console.error("Lỗi:", e);
+      alert("❌ Lỗi kết nối đến server");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -319,8 +545,31 @@ const AdminTourManagement: React.FC = () => {
                 borderTop: "1px solid #f0f0f0",
                 padding: "12px 20px",
                 display: "flex",
-                justifyContent: "flex-end"
+                justifyContent: "flex-end",
+                gap: "8px"
               }}>
+                <button
+                  onClick={(e) => handleEditClick(tour.maTour, e)}
+                  style={{
+                    padding: "6px 16px",
+                    backgroundColor: "#ffc107",
+                    color: "#000",
+                    border: "1px solid #ffc107",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                    fontSize: "13px",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#ffb300";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "#ffc107";
+                  }}
+                >
+                  ✏️ Sửa
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -370,6 +619,388 @@ const AdminTourManagement: React.FC = () => {
           </div>
         )}
 
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div 
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+              zIndex: 1000,
+              overflowY: "auto"
+            }}
+            onClick={() => setShowEditModal(false)}
+          >
+            <div 
+              style={{
+                backgroundColor: "white",
+                borderRadius: "8px",
+                maxWidth: "800px",
+                width: "100%",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                margin: "20px 0"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{
+                background: "linear-gradient(135deg, #ffc107 0%, #ff9800 100%)",
+                padding: "24px",
+                color: "#000",
+                position: "sticky",
+                top: 0,
+                zIndex: 1
+              }}>
+                <h2 style={{ margin: "0 0 8px 0", fontSize: "22px" }}>
+                  Chỉnh Sửa Tour
+                </h2>
+                <p style={{ margin: 0, opacity: 0.8, fontSize: "14px" }}>
+                  Mã tour: {editForm.maTour}
+                </p>
+              </div>
+
+              <div style={{ padding: "30px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  
+                  {/* Upload ảnh */}
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "#555"
+                    }}>
+                      Ảnh tour 📸
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        cursor: isUploading ? "not-allowed" : "pointer"
+                      }}
+                    />
+                    {isUploading && (
+                      <span style={{ color: "#007bff", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                        ⏳ Đang upload...
+                      </span>
+                    )}
+                    {previewImage && (
+                      <div style={{ marginTop: "10px" }}>
+                        <img 
+                          src={previewImage} 
+                          alt="Preview" 
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "300px",
+                            borderRadius: "8px",
+                            border: "2px solid #ddd"
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tên tour */}
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "#555"
+                    }}>
+                      Tên tour <span style={{ color: "#dc3545" }}>*</span>
+                    </label>
+                    <input
+                      placeholder="Nhập tên tour"
+                      name="tenTour"
+                      value={editForm.tenTour}
+                      onChange={updateEditForm}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: `1px solid ${errors.tenTour ? '#dc3545' : '#ddd'}`,
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        boxShadow: errors.tenTour ? '0 0 0 2px rgba(220, 53, 69, 0.25)' : 'none'
+                      }}
+                    />
+                    {errors.tenTour && (
+                      <span style={{ color: "#dc3545", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                        {errors.tenTour}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Điểm đến */}
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "#555"
+                    }}>
+                      Điểm đến <span style={{ color: "#dc3545" }}>*</span>
+                    </label>
+                    <select
+                      name="diemKhoiHanh"
+                      value={editForm.diemKhoiHanh}
+                      onChange={updateEditForm}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: `1px solid ${errors.diemKhoiHanh ? '#dc3545' : '#ddd'}`,
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        boxShadow: errors.diemKhoiHanh ? '0 0 0 2px rgba(220, 53, 69, 0.25)' : 'none',
+                        backgroundColor: "white"
+                      }}
+                    >
+                      <option value="">-- Chọn điểm đến --</option>
+                      {tinhThanhVietNam.map((tinhThanh) => (
+                        <option key={tinhThanh} value={tinhThanh}>
+                          {tinhThanh}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.diemKhoiHanh && (
+                      <span style={{ color: "#dc3545", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                        {errors.diemKhoiHanh}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Row: Số ngày & Số chỗ */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                    <div>
+                      <label style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "600",
+                        color: "#555"
+                      }}>
+                        Số ngày <span style={{ color: "#dc3545" }}>*</span>
+                      </label>
+                      <input
+                        placeholder="Số ngày"
+                        name="soNgay"
+                        value={editForm.soNgay}
+                        onChange={updateEditForm}
+                        type="number"
+                        min="1"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: `1px solid ${errors.soNgay ? '#dc3545' : '#ddd'}`,
+                          borderRadius: "4px",
+                          fontSize: "14px",
+                          boxShadow: errors.soNgay ? '0 0 0 2px rgba(220, 53, 69, 0.25)' : 'none'
+                        }}
+                      />
+                      {errors.soNgay && (
+                        <span style={{ color: "#dc3545", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                          {errors.soNgay}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "600",
+                        color: "#555"
+                      }}>
+                        Số chỗ tối đa <span style={{ color: "#dc3545" }}>*</span>
+                      </label>
+                      <input
+                        placeholder="Số chỗ tối đa"
+                        name="soChoToiDa"
+                        value={editForm.soChoToiDa}
+                        onChange={updateEditForm}
+                        type="number"
+                        min="1"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: `1px solid ${errors.soChoToiDa ? '#dc3545' : '#ddd'}`,
+                          borderRadius: "4px",
+                          fontSize: "14px",
+                          boxShadow: errors.soChoToiDa ? '0 0 0 2px rgba(220, 53, 69, 0.25)' : 'none'
+                        }}
+                      />
+                      {errors.soChoToiDa && (
+                        <span style={{ color: "#dc3545", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                          {errors.soChoToiDa}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row: Số lượng tour & Giá tour */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                    <div>
+                      <label style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "600",
+                        color: "#555"
+                      }}>
+                        Số lượng tour
+                      </label>
+                      <input
+                        placeholder="Số lượng tour có sẵn"
+                        name="soLuong"
+                        value={editForm.soLuong}
+                        onChange={updateEditForm}
+                        type="number"
+                        min="0"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: "1px solid #ddd",
+                          borderRadius: "4px",
+                          fontSize: "14px"
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "600",
+                        color: "#555"
+                      }}>
+                        Giá tour (VND) <span style={{ color: "#dc3545" }}>*</span>
+                      </label>
+                      <input
+                        placeholder="Giá tour"
+                        name="giaTour"
+                        value={editForm.giaTour}
+                        onChange={updateEditForm}
+                        type="number"
+                        min="1"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: `1px solid ${errors.giaTour ? '#dc3545' : '#ddd'}`,
+                          borderRadius: "4px",
+                          fontSize: "14px",
+                          boxShadow: errors.giaTour ? '0 0 0 2px rgba(220, 53, 69, 0.25)' : 'none'
+                        }}
+                      />
+                      {errors.giaTour && (
+                        <span style={{ color: "#dc3545", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                          {errors.giaTour}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Mô tả */}
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "#555"
+                    }}>
+                      Mô tả <span style={{ color: "#dc3545" }}>*</span>
+                    </label>
+                    <textarea
+                      placeholder="Nhập mô tả chi tiết về tour"
+                      name="moTa"
+                      value={editForm.moTa}
+                      onChange={updateEditForm}
+                      rows={5}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: `1px solid ${errors.moTa ? '#dc3545' : '#ddd'}`,
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        resize: "vertical",
+                        fontFamily: "Arial, sans-serif",
+                        boxShadow: errors.moTa ? '0 0 0 2px rgba(220, 53, 69, 0.25)' : 'none'
+                      }}
+                    />
+                    {errors.moTa && (
+                      <span style={{ color: "#dc3545", fontSize: "12px", marginTop: "5px", display: "block" }}>
+                        {errors.moTa}
+                      </span>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+
+              <div style={{
+                borderTop: "1px solid #e9ecef",
+                padding: "16px 24px",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+                position: "sticky",
+                bottom: 0,
+                backgroundColor: "white"
+              }}>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  style={{
+                    padding: "8px 20px",
+                    backgroundColor: "#6c757d",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#5a6268"}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#6c757d"}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={submitEdit}
+                  disabled={isSubmitting}
+                  style={{
+                    padding: "8px 20px",
+                    background: isSubmitting ? "#ccc" : "#ffc107",
+                    color: isSubmitting ? "#666" : "#000",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: isSubmitting ? "not-allowed" : "pointer"
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isSubmitting) e.currentTarget.style.background = "#ffb300";
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isSubmitting) e.currentTarget.style.background = "#ffc107";
+                  }}
+                >
+                  {isSubmitting ? "Đang lưu..." : "💾 Lưu thay đổi"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Detail Modal */}
         {selectedTour && (
           <div 
             style={{
