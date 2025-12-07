@@ -105,66 +105,98 @@ export default function TourDetail() {
 
   // --- Hàm xử lý Đặt Tour ---
   const handleBooking = async () => {
-    // 1. Kiểm tra thông tin cần thiết
-    if (!maUser || !id) {
-      alert(
-        "⚠️ Thiếu thông tin người dùng hoặc mã tour. Vui lòng đăng nhập lại."
-      );
-      return;
-    }
-    if (!bookingData.diemDi || bookingData.soKhach < 1) {
-      alert("⚠️ Vui lòng nhập đầy đủ Số khách và Điểm đi.");
-      return;
-    }
-    if (bookingData.soKhach > tour.soChoToiDa) {
-      alert(
-        `⚠️ Số lượng khách tối đa cho tour này là ${tour.soChoToiDa}. Vui lòng kiểm tra lại.`
-      );
-      return;
-    }
+  // 1. Kiểm tra thông tin cần thiết
+  if (!maUser || !id) {
+    alert(
+      "⚠️ Thiếu thông tin người dùng hoặc mã tour. Vui lòng đăng nhập lại."
+    );
+    return;
+  }
+  if (!bookingData.diemDi || bookingData.soKhach < 1) {
+    alert("⚠️ Vui lòng nhập đầy đủ Số khách và Điểm đi.");
+    return;
+  }
+  if (bookingData.soKhach > tour.soChoToiDa) {
+    alert(
+      `⚠️ Số lượng khách tối đa cho tour này là ${tour.soChoToiDa}. Vui lòng kiểm tra lại.`
+    );
+    return;
+  }
 
-    // 2. TẠO NGÀY/GIỜ CHÍNH XÁC THEO ĐỊNH DẠNG POSTMAN MONG MUỐN (YYYY-MM-DDTHH:MM:SS)
-    // Sẽ tạo ra chuỗi như: "2025-12-02T03:00:32"
-    const ngayLapHD = new Date().toISOString().slice(0, 19);
+  // 2. TẠO NGÀY/GIỜ CHÍNH XÁC
+  const ngayLapHD = new Date().toISOString().slice(0, 19);
 
-    // 3. Chuẩn bị dữ liệu (Bao gồm trangThai)
-    const requestBody = {
-      ngayLapHD: ngayLapHD,
-      soKhach: bookingData.soKhach,
-      trangThai: "Đã thanh toán", // TRƯỜNG BỊ THIẾU/SAI CẦN BỔ SUNG
-      diemDi: bookingData.diemDi,
-    };
-
-    // 4. Gửi request POST
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/hoadon/create?userId=${maUser}&tourId=${id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
-
-      if (response.ok) {
-        // Xử lý thành công
-        alert("🎉 Đặt tour thành công! Vui lòng kiểm tra email xác nhận.");
-        setIsModalOpen(false); // Đóng modal
-      } else {
-        // Xử lý lỗi từ server
-        const errorText = await response.text();
-        console.error("Lỗi server:", errorText);
-        alert(
-          `❌ Đã xảy ra lỗi khi đặt tour. Mã lỗi: ${response.status}. Chi tiết xem trong console.`
-        );
-      }
-    } catch (error) {
-      console.error("Lỗi mạng hoặc lỗi gửi request:", error);
-      alert("⚠️ Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.");
-    }
+  // 3. Chuẩn bị dữ liệu hóa đơn
+  const requestBody = {
+    ngayLapHD: ngayLapHD,
+    soKhach: bookingData.soKhach,
+    trangThai: "Đã thanh toán",
+    diemDi: bookingData.diemDi,
   };
+
+  try {
+    // ✅✅✅ BƯỚC 1: GỌI API GIẢM SỐ LƯỢNG TOUR
+    console.log(`🎫 Đang giảm số lượng tour: ${id}, số người: ${bookingData.soKhach}`);
+    
+    const bookTourResponse = await fetch(
+      `http://localhost:8080/api/tour/${id}/book?soLuongDat=${bookingData.soKhach}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!bookTourResponse.ok) {
+      const errorText = await bookTourResponse.text();
+      throw new Error(errorText || "Không thể đặt tour. Tour có thể đã hết chỗ.");
+    }
+
+    console.log("✅ Giảm số lượng tour thành công!");
+
+    // ✅✅✅ BƯỚC 2: TẠO HÓA ĐƠN
+    console.log("📝 Đang tạo hóa đơn...");
+    
+    const response = await fetch(
+      `http://localhost:8080/api/hoadon/create?userId=${maUser}&tourId=${id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    if (response.ok) {
+      // Thành công
+      alert("🎉 Đặt tour thành công! Vui lòng kiểm tra email xác nhận.");
+      setIsModalOpen(false);
+      
+      // Reload lại thông tin tour để cập nhật số lượng
+      fetch(`http://localhost:8080/api/tour/${id}/detail`)
+        .then((res) => res.json())
+        .then((data) => setTour(data))
+        .catch((err) => console.log(err));
+        
+    } else {
+      // Lỗi tạo hóa đơn
+      const errorText = await response.text();
+      console.error("Lỗi tạo hóa đơn:", errorText);
+      
+      // Nếu tạo hóa đơn thất bại, có thể cần hoàn lại số lượng tour
+      // (tùy logic của bạn)
+      
+      alert(
+        `❌ Đã xảy ra lỗi khi tạo hóa đơn. Mã lỗi: ${response.status}. Chi tiết xem trong console.`
+      );
+    }
+  } catch (error) {
+    console.error("Lỗi khi đặt tour:", error);
+    alert(`⚠️ Đã xảy ra lỗi: ${error.message}`);
+  }
+};
 
   // --- Hiển thị Loading ---
   if (!tour) {

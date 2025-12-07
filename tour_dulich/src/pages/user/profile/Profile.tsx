@@ -10,11 +10,15 @@ import {
   Calendar,
   Map,
   Users,
+  ArrowLeft,
+  Home,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [hoaDonList, setHoaDonList] = useState<any[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const store = localStorage.getItem("userInfo");
@@ -37,11 +41,25 @@ export default function Profile() {
     window.location.href = "/login";
   };
 
+  const handleBackToHome = () => {
+    navigate("/");
+  };
+
   if (!userInfo) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Nút Quay lại Trang chủ */}
+        <button
+          onClick={handleBackToHome}
+          className="mb-6 flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-5 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <Home className="w-5 h-5" />
+          <span>Quay lại Trang chủ</span>
+        </button>
+
         {/* Card chính */}
         <div className="bg-white shadow-2xl rounded-3xl overflow-hidden">
           {/* Header */}
@@ -144,8 +162,6 @@ export default function Profile() {
                           <Calendar className="w-4 h-4 inline mr-1" />
                           Ngày đặt: {hd.ngayLapHD}
                         </p>
-
-                      
                       </div>
                     </div>
                   </div>

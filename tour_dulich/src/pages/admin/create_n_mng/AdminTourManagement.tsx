@@ -437,9 +437,8 @@ const AdminTourManagement: React.FC = () => {
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {[
               { key: 'all' as FilterType, label: `Tất cả (${tours.length})`, color: '#007bff' },
-              { key: 'available' as FilterType, label: `Còn chỗ (${tours.filter(t => t.soLuong > 0 && t.trangThai).length})`, color: '#28a745' },
-              { key: 'full' as FilterType, label: `Hết chỗ (${tours.filter(t => t.soLuong === 0 && t.trangThai).length})`, color: '#dc3545' },
-              { key: 'hidden' as FilterType, label: `Đã ẩn (${tours.filter(t => !t.trangThai).length})`, color: '#6c757d' }
+              { key: 'available' as FilterType, label: `Đang Hoạt Động (${tours.filter(t => t.soLuong > 0 && t.trangThai).length})`, color: '#28a745' },
+              { key: 'hidden' as FilterType, label: `Ngưng Hoạt Động (${tours.filter(t => !t.trangThai).length})`, color: '#6c757d' }
             ].map(btn => (
               <button
                 key={btn.key}
